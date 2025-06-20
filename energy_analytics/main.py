@@ -7,6 +7,7 @@ Main execution file that orchestrates the energy data ingestion pipeline.
 """
 
 import sys
+import pandas as pd
 import logging
 from datetime import datetime, timedelta
 
@@ -70,10 +71,20 @@ def run_pipeline(db_config, ingestion_config):
         # Offer to process historical data immediately
         user_choice = input("Would you like to process historical data now? (y/N): ")
         if user_choice.lower() in ['y', 'yes']:
-            print("Processing last 7 days of historical data...")
+            print("Processing historical data...")
             try:
-                end_date = datetime.now()
-                start_date = end_date - timedelta(days=7)
+                end_date = ''
+                start_date = ''
+                if not start_date:
+                    # For UCI household data (2006-2010)
+                    start_date = datetime(2007, 4, 1)
+                    end_date = datetime(2007, 4, 30)
+                else:
+                    # Validate dates are in UCI range
+                    uci_start = datetime(2006, 4, 1)
+                    uci_end = datetime(2007, 4, 30)
+                    start_date = max(pd.to_datetime(start_date), uci_start)
+                    end_date = min(pd.to_datetime(end_date), uci_end)
                 pipeline.process_historical_data(
                     start_date.strftime('%Y-%m-%d'), 
                     end_date.strftime('%Y-%m-%d')
@@ -83,7 +94,7 @@ def run_pipeline(db_config, ingestion_config):
                 print(f"❌ Historical data processing failed: {e}")
         
         print("Press Ctrl+C to stop the pipeline")
-        
+
         # Run scheduler (this will run indefinitely)
         pipeline.run_scheduler()
         

@@ -260,12 +260,26 @@ class HouseholdIngestionPipeline(BaseIngestionPipeline):
                 if old_name in data.columns:
                     data.rename(columns={old_name: new_name}, inplace=True)
 
-            # Create datetime index
-            if 'Date' in data.columns and 'Time' in data.columns:
-                data['datetime'] = pd.to_datetime(data['Date'] + ' ' + data['Time'],
-                                                  format='%d/%m/%Y %H:%M:%S', errors='coerce')
-                data = data.drop(['Date', 'Time'], axis=1)
-                data.set_index('datetime', inplace=True)
+                    # Create datetime index - SIMPLIFIED APPROACH
+                    if 'Date' in data.columns and 'Time' in data.columns:
+                        datetime_str = data['Date'] + ' ' + data['Time']
+
+                        # Parse as timezone-naive to avoid DST issues
+                        data['datetime'] = pd.to_datetime(datetime_str,
+                                                          format='%d/%m/%Y %H:%M:%S',
+                                                          errors='coerce')
+
+                        # Remove any failed conversions (DST conflicts will become NaN)
+                        initial_count = len(data)
+                        data = data.dropna(subset=['datetime'])
+                        removed_count = initial_count - len(data)
+
+                        if removed_count > 0:
+                            logger.info(
+                                f"Removed {removed_count} records with invalid timestamps (likely DST transitions)")
+
+                        data = data.drop(['Date', 'Time'], axis=1)
+                        data.set_index('datetime', inplace=True)
 
             # Convert '?' to NaN and then to numeric
             numeric_columns = ['global_active_power', 'global_reactive_power', 'voltage',
