@@ -1,0 +1,56 @@
+data_sources:
+  grid_data:
+    entsoe_api: https://web-api.tp.entsoe.eu/api
+    opsd_url: https://data.open-power-system-data.org/time_series/latest/time_series_60min_singleindex.csv
+    fallback_urls:
+      - https://data.open-power-system-data.org/time_series/2020-10-06/time_series_60min_singleindex.csv
+      - https://data.open-power-system-data.org/time_series/2019-06-05/time_series_60min_singleindex.csv
+    enable_synthetic_fallback: true
+    synthetic_data_quality: high  # Options: basic, standard, high
+
+  uci_household:
+    household_id: uci_france_001
+    url: https://archive.ics.uci.edu/static/public/235/individual+household+electric+power+consumption.zip
+    enable_synthetic_fallback: true
+
+  weather_api:
+    base_url: https://archive-api.open-meteo.com/v1/era5
+    forecast_url: https://api.open-meteo.com/v1/forecast
+    enable_synthetic_fallback: true
+    locations:
+      berlin:
+        lat: 52.52
+        location_id: berlin_de_001
+        lon: 13.405
+      madrid:
+        lat: 40.4168
+        location_id: madrid_es_001
+        lon: -3.7038
+      paris:
+        lat: 48.8566
+        location_id: paris_fr_001
+        lon: 2.3522
+
+database:
+  database: energy_analytics
+  host: localhost
+  password: 123qwe
+  port: 5432
+  username: energy_user
+
+ingestion:
+  batch_size: 1000
+  data_retention_days: 1095
+  enable_monitoring: true
+  enable_streaming: true
+  max_retries: 10
+  retry_delay: 60
+  weather_api_delay: 10
+  enable_data_validation: true
+  strict_validation: false  # Allow pipeline to continue with warnings
+
+logging:
+  backup_count: 5
+  file: ingestion_pipeline.log
+  level: INFO
+  max_size_mb: 100
